@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Equipment {
+  id          String    @id @default(cuid())
+  name        String
+  category    String
+  department  String
+  description String
+  specs       String
+  location    String
+  status      String    @default("AVAILABLE")
+  createdAt   DateTime  @default(now())
+  bookings    Booking[]
+
+  @@index([department])
+  @@index([category])
+}
+
+model Booking {
+  id           String    @id @default(cuid())
+  equipmentId  String
+  equipment    Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  studentName  String
+  projectTitle String
+  description  String
+  deadline     DateTime
+  startTime    DateTime
+  endTime      DateTime
+  status       String    @default("PENDING")
+  createdAt    DateTime  @default(now())
+
+  @@index([equipmentId])
+  @@index([startTime])
+  @@index([status])
+}
