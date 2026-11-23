@@ -16,6 +16,11 @@ const csp = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    outputFileTracingIncludes: {
+      '/api/**': ['./prisma/dev.db'],
+    },
+  },
   async headers() {
     return [
       {
