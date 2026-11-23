@@ -1,6 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 
+interface ApiEnvelope<T> {
+  success?: boolean;
+  data?: T;
+  error?: string;
+}
+
 export function useApi<T>(url: string, version = 0): { data: T | null; loading: boolean; error: string | null } {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -11,10 +17,17 @@ export function useApi<T>(url: string, version = 0): { data: T | null; loading: 
     setLoading(true);
     fetch(url, { signal: controller.signal })
       .then(async (res) => {
-        if (!res.ok) throw new Error('Request failed (' + res.status + ')');
-        return (await res.json()) as T;
+        const payload = (await res.json()) as ApiEnvelope<T> & T;
+        if (!res.ok || payload.success === false) {
+          throw new Error(payload.error ?? 'Request failed (' + res.status + ')');
+        }
+        return (payload.data !== undefined ? payload.data : payload) as T;
       })
-      .then((d) => { setData(d); setError(null); setLoading(false); })
+      .then((d) => {
+        setData(d);
+        setError(null);
+        setLoading(false);
+      })
       .catch((e: unknown) => {
         if (e instanceof DOMException && e.name === 'AbortError') return;
         setError(e instanceof Error ? e.message : 'Something went wrong');
