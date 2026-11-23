@@ -5,7 +5,7 @@ import { listConflicts } from '@/services/conflictService';
 export function GET(req: NextRequest): Promise<Response> {
   return respond(async () => {
     enforceRateLimit(req, 'ai-conflicts', 15, 60_000);
-    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN'], { defaultReadRole: 'STUDENT' });
 
     return listConflicts();
   });

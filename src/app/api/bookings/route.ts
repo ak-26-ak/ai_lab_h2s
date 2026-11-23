@@ -6,7 +6,7 @@ import { createBooking, listBookings } from '@/services/bookingService';
 export function GET(req: NextRequest): Promise<Response> {
   return respond(async () => {
     enforceRateLimit(req, 'bookings-list', 60, 60_000);
-    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN'], { defaultReadRole: 'STUDENT' });
 
     const { searchParams } = new URL(req.url);
     const query = bookingQuerySchema.parse({
@@ -14,7 +14,6 @@ export function GET(req: NextRequest): Promise<Response> {
     });
 
     return listBookings(query.status);
-
   });
 }
 

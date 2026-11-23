@@ -6,7 +6,7 @@ import { listEquipment } from '@/services/equipmentService';
 export function GET(req: NextRequest): Promise<Response> {
   return respond(async () => {
     enforceRateLimit(req, 'equipment-list', 60, 60_000);
-    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN'], { defaultReadRole: 'STUDENT' });
 
     const { searchParams } = new URL(req.url);
     const query = equipmentQuerySchema.parse({

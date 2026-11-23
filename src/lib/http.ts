@@ -58,11 +58,17 @@ export async function respond<T>(fn: () => Promise<T>, status = 200): Promise<Ne
 
 /**
  * Server-side role gate validating `x-role` against canonical Role enums.
- * Note: Roles operate as simulated demo identities for competition evaluation.
+ * Read-only GET endpoints may default missing headers to `STUDENT`, while any
+ * malformed role or unauthorized mutation is strictly rejected (401 / 403).
  */
-export function requireRole(req: Request, allowed: readonly Role[]): Role {
-  const rawRole = (req.headers.get('x-role') ?? '').trim().toUpperCase();
-  const parsed = roleSchema.safeParse(rawRole);
+export function requireRole(
+  req: Request,
+  allowed: readonly Role[],
+  options: { defaultReadRole?: Role } = {}
+): Role {
+  const rawHeader = req.headers.get('x-role')?.trim().toUpperCase();
+  const effectiveRole = !rawHeader && options.defaultReadRole ? options.defaultReadRole : (rawHeader ?? '');
+  const parsed = roleSchema.safeParse(effectiveRole);
 
   if (!parsed.success) {
     throw new HttpError(401, 'Missing or invalid campus role identity', 'UNAUTHORIZED');
