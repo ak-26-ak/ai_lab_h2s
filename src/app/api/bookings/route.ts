@@ -13,7 +13,8 @@ export function GET(req: NextRequest): Promise<Response> {
       status: searchParams.get('status') ?? undefined,
     });
 
-    return listBookings(query);
+    return listBookings(query.status);
+
   });
 }
 

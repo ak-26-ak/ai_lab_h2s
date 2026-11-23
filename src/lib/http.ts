@@ -76,9 +76,11 @@ export function requireRole(req: Request, allowed: readonly Role[]): Role {
 }
 
 /**
- * In-memory sliding-window rate limiter to protect booking mutations and AI endpoints.
+ * Bounded in-memory sliding-window rate limiter to protect booking mutations and AI endpoints
+ * without unbounded memory growth in serverless environments.
  */
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+const MAX_BUCKETS = 500;
 
 export function enforceRateLimit(
   req: Request,
@@ -86,10 +88,16 @@ export function enforceRateLimit(
   maxRequests = 15,
   windowMs = 60_000
 ): void {
+  const now = Date.now();
+  if (rateBuckets.size > MAX_BUCKETS) {
+    for (const [k, v] of rateBuckets) {
+      if (now > v.resetAt) rateBuckets.delete(k);
+    }
+  }
+
   const forwarded = req.headers.get('x-forwarded-for');
   const clientKey = forwarded ? forwarded.split(',')[0].trim() : 'local-client';
   const key = `${bucket}:${clientKey}`;
-  const now = Date.now();
   const current = rateBuckets.get(key);
 
   if (!current || now > current.resetAt) {

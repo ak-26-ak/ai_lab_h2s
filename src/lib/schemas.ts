@@ -55,3 +55,7 @@ export const aiOutputValidationSchema = z.object({
   newEquipmentId: z.string().nullable(),
   reasoning: z.string().min(5).max(800),
 });
+
+export type EquipmentQueryInput = z.infer<typeof equipmentQuerySchema>;
+export type BookingCreateInput = z.infer<typeof bookingCreateSchema>;
+export type ApplyResolutionInput = z.infer<typeof applyResolutionSchema>;

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { enforceRateLimit, requireRole, respond } from '@/lib/http';
 import { applyResolutionSchema } from '@/lib/schemas';
-import { applyConflictResolution } from '@/services/conflictService';
+import { applyResolution } from '@/services/conflictService';
 
 export function POST(req: NextRequest): Promise<Response> {
   return respond(async () => {
@@ -9,6 +9,12 @@ export function POST(req: NextRequest): Promise<Response> {
     requireRole(req, ['ADMIN']);
 
     const body = applyResolutionSchema.parse(await req.json());
-    return applyConflictResolution(body);
+    return applyResolution({
+      winnerId: body.winnerId,
+      loserId: body.loserId,
+      newStart: body.newStart,
+      newEnd: body.newEnd,
+      newEquipmentId: body.newEquipmentId ?? null,
+    });
   });
 }
