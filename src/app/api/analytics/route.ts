@@ -1,8 +1,12 @@
-import { respond } from '@/lib/http';
-import { getAnalytics } from '@/services/analyticsService';
+import { NextRequest } from 'next/server';
+import { enforceRateLimit, requireRole, respond } from '@/lib/http';
+import { getUtilizationAnalytics } from '@/services/analyticsService';
 
-export const dynamic = 'force-dynamic';
+export function GET(req: NextRequest): Promise<Response> {
+  return respond(async () => {
+    enforceRateLimit(req, 'analytics-read', 60, 60_000);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
 
-export function GET(): Promise<Response> {
-  return respond(() => getAnalytics());
+    return getUtilizationAnalytics();
+  });
 }

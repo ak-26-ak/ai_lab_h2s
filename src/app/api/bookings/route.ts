@@ -1,17 +1,28 @@
-import type { NextRequest } from 'next/server';
-import { respond } from '@/lib/http';
+import { NextRequest } from 'next/server';
+import { enforceRateLimit, requireRole, respond } from '@/lib/http';
 import { bookingCreateSchema, bookingQuerySchema } from '@/lib/schemas';
 import { createBooking, listBookings } from '@/services/bookingService';
 
-export const dynamic = 'force-dynamic';
-
 export function GET(req: NextRequest): Promise<Response> {
   return respond(async () => {
-    const { status } = bookingQuerySchema.parse({ status: req.nextUrl.searchParams.get('status') ?? undefined });
-    return listBookings(status);
+    enforceRateLimit(req, 'bookings-list', 60, 60_000);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
+
+    const { searchParams } = new URL(req.url);
+    const query = bookingQuerySchema.parse({
+      status: searchParams.get('status') ?? undefined,
+    });
+
+    return listBookings(query);
   });
 }
 
 export function POST(req: NextRequest): Promise<Response> {
-  return respond(async () => createBooking(bookingCreateSchema.parse(await req.json())), 201);
+  return respond(async () => {
+    enforceRateLimit(req, 'bookings-create', 15, 60_000);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
+
+    const body = bookingCreateSchema.parse(await req.json());
+    return createBooking(body);
+  }, 201);
 }

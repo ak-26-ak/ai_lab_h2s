@@ -1,14 +1,20 @@
-import type { NextRequest } from 'next/server';
-import { respond } from '@/lib/http';
+import { NextRequest } from 'next/server';
+import { enforceRateLimit, requireRole, respond } from '@/lib/http';
 import { equipmentQuerySchema } from '@/lib/schemas';
 import { listEquipment } from '@/services/equipmentService';
 
-export const dynamic = 'force-dynamic';
-
 export function GET(req: NextRequest): Promise<Response> {
   return respond(async () => {
-    const params = Object.fromEntries(req.nextUrl.searchParams.entries());
-    const filters = equipmentQuerySchema.parse({ q: params.q || undefined, department: params.department || undefined, category: params.category || undefined });
-    return listEquipment(filters);
+    enforceRateLimit(req, 'equipment-list', 60, 60_000);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
+
+    const { searchParams } = new URL(req.url);
+    const query = equipmentQuerySchema.parse({
+      q: searchParams.get('q') ?? undefined,
+      department: searchParams.get('department') ?? undefined,
+      category: searchParams.get('category') ?? undefined,
+    });
+
+    return listEquipment(query);
   });
 }

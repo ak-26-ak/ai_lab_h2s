@@ -1,8 +1,12 @@
-import { respond } from '@/lib/http';
-import { listConflicts } from '@/services/conflictService';
+import { NextRequest } from 'next/server';
+import { enforceRateLimit, requireRole, respond } from '@/lib/http';
+import { getConflictsWithResolutions } from '@/services/conflictService';
 
-export const dynamic = 'force-dynamic';
+export function GET(req: NextRequest): Promise<Response> {
+  return respond(async () => {
+    enforceRateLimit(req, 'ai-conflicts', 15, 60_000);
+    requireRole(req, ['STUDENT', 'FACULTY', 'ADMIN']);
 
-export function GET(): Promise<Response> {
-  return respond(() => listConflicts());
+    return getConflictsWithResolutions();
+  });
 }

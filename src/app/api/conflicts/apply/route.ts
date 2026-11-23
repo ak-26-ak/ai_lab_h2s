@@ -1,13 +1,14 @@
-import type { NextRequest } from 'next/server';
-import { requireRole, respond } from '@/lib/http';
+import { NextRequest } from 'next/server';
+import { enforceRateLimit, requireRole, respond } from '@/lib/http';
 import { applyResolutionSchema } from '@/lib/schemas';
-import { applyResolution } from '@/services/conflictService';
-
-export const dynamic = 'force-dynamic';
+import { applyConflictResolution } from '@/services/conflictService';
 
 export function POST(req: NextRequest): Promise<Response> {
   return respond(async () => {
-    requireRole(req, ['FACULTY', 'ADMIN']);
-    return applyResolution(applyResolutionSchema.parse(await req.json()));
+    enforceRateLimit(req, 'conflicts-apply', 10, 60_000);
+    requireRole(req, ['ADMIN']);
+
+    const body = applyResolutionSchema.parse(await req.json());
+    return applyConflictResolution(body);
   });
 }
