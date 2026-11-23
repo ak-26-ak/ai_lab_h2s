@@ -2,7 +2,7 @@
 
 **Live Demo:** [https://vercel.app](https://vercel.app)
 
-A Next.js 14 full-stack MVP for campus laboratory resource sharing, featuring equipment discovery, booking management, and AI-powered conflict resolution.
+A full-stack Next.js 14 platform enabling students to discover equipment across academic departments, manage project-based booking requests, handle faculty approvals, and resolve scheduling conflicts via Google Gemini or an offline fallback engine.
 
 ---
 
@@ -10,10 +10,10 @@ A Next.js 14 full-stack MVP for campus laboratory resource sharing, featuring eq
 
 ```bash
 npm install
-npm run setup    # Creates SQLite schema and seeds lab items and conflicts
+npm run setup    # Creates SQLite schema and seeds 12 lab items + 2 active conflicts
 npm run dev      # Starts local server at http://localhost:3000
-npm test         # Runs Vitest unit, component, and security test suites
-npm run lint     # Runs ESLint and TypeScript quality checks
+npm test         # Runs Vitest unit, component, security, and workflow test suites
+npm run lint     # Runs ESLint and strict TypeScript quality checks
 npm run build    # Runs production build and database verification
 ```
 
@@ -21,20 +21,25 @@ npm run build    # Runs production build and database verification
 
 ## Core Features & Architecture
 
-- **Equipment Discovery & Bookings:** Real-time search, department filtering, and booking requests.
-- **Role-Based Approvals & AI Conflict Resolution:** Role switching (`Student`, `Faculty Advisor`, `Lab Admin`) and Gemini-powered scheduling arbitration.
-- **Tech Stack:** Next.js 14 (App Router), Prisma, SQLite, Zod validation, Vitest, and Tailwind CSS.
+- **Cross-Department Equipment Discovery:** Debounced catalog search (300ms) with department filtering (`CS`, `Electronics`, `Mechanical`) and live availability status (`AVAILABLE`, `IN_USE`, `MAINTENANCE`).
+- **Project-Based Access Requests:** Accessible slide-over booking drawer with shared client/server Zod schema validation.
+- **Role-Based Approvals & GenAI Conflict Resolution:** Role switcher (`Student`, `Faculty Advisor`, `Lab Admin`) paired with Gemini 1.5 Flash structured JSON arbitration and a deterministic rules-based fallback engine.
+- **Utilization Analytics:** Real-time KPI summaries, department utilization rates, and fleet status metrics.
+- **Layered Architecture:** Indexed SQLite via Prisma, pure scheduling logic in `src/lib/`, business logic in `src/services/`, validated route handlers in `src/app/api/`, and WCAG 2.1 AA compliant UI components in `src/components/`.
 
 ---
 
-## Security & Demo Controls
+## Security & Demo Identity Controls
 
-- **Server-Side Role Allowlisting & Rate Limiting:** Enforces strict role checks and sliding-window rate limiting on mutations.
-- **Validation & Duplicate Protection:** Uses Zod schemas and prevents overlapping booking submissions for identical time windows.
-- **Error Handling & Secret Hygiene:** Sanitizes error responses and restricts `GEMINI_API_KEY` to server-side execution.
+- **Strict Server-Side Role Allowlisting:** Enforces `requireRole()` against canonical role enums (`STUDENT`, `FACULTY`, `ADMIN`).
+- **Bounded Sliding-Window Rate Limiting:** Throttles sensitive endpoints (`429 Too Many Requests`) with automatic bucket pruning (`MAX_BUCKETS = 500`).
+- **API Request & AI Output Validation:** Zod schemas validate payloads and cross-check Gemini responses before database writes.
+- **Duplicate Booking Submission Protection:** Prevents repeated overlapping bookings by the same student for identical equipment (`409 Conflict`).
+- **Sanitized Error Handling & HTTP Headers:** Strips internal database details and includes standard security headers (`CSP`, `HSTS`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`) in `next.config.mjs`.
 
 ---
 
-## Accessibility & Testing
+## Accessibility & Automated Testing
 
-Includes WCAG 2.1 AA accessibility features (semantic HTML, ARIA attributes, keyboard navigation) and comprehensive automated test suites covering security and conflict logic.
+- **Accessibility (WCAG 2.1 AA):** Semantic HTML landmarks, explicit label bindings, live status announcements, and keyboard-navigable modals.
+- **Automated Test Suite (`npm test`):** Covers race-condition prevention, conflict rescheduling, Gemini timeout fallbacks, maintenance status rejections, duplicate booking guards, and role-based API security (`401`/`403`/`429`).
