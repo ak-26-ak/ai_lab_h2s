@@ -4,6 +4,7 @@ import { bookingInclude, toBookingDTO } from '@/lib/mappers';
 import { prisma } from '@/lib/prisma';
 import type { BookingCreateInput } from '@/lib/schemas';
 import type { BookingDTO, BookingStatus } from '@/lib/types';
+import { invalidateAnalyticsCache } from '@/services/analyticsService';
 
 export async function listBookings(status?: BookingStatus): Promise<BookingDTO[]> {
   const rows = await prisma.booking.findMany({
@@ -51,6 +52,7 @@ export async function createBooking(input: BookingCreateInput): Promise<{ bookin
     },
   });
   const row = await prisma.booking.create({ data: { ...input, status: 'PENDING' }, include: bookingInclude });
+  invalidateAnalyticsCache();
   return { booking: toBookingDTO(row), conflict: clashes > 0 };
 }
 
@@ -72,5 +74,6 @@ export async function decideBooking(id: string, status: 'APPROVED' | 'REJECTED')
     if (!check.ok) throw new HttpError(409, check.reason ?? 'Cannot approve');
   }
   const updated = await prisma.booking.update({ where: { id }, data: { status }, include: bookingInclude });
+  invalidateAnalyticsCache();
   return toBookingDTO(updated);
 }

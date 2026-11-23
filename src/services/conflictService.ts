@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import type { ConflictDTO } from '@/lib/types';
 import type { Alternative, ConflictBooking } from '@/lib/resolution';
 import { recommendResolution } from '@/services/aiService';
+import { invalidateAnalyticsCache } from '@/services/analyticsService';
 
 export async function listConflicts(): Promise<ConflictDTO[]> {
   // Two queries total, regardless of how many conflicts exist.
@@ -93,5 +94,7 @@ export async function applyResolution(input: {
       data: { equipmentId, startTime: input.newStart, endTime: input.newEnd },
     });
   });
+
+  invalidateAnalyticsCache();
   return { ok: true };
 }
